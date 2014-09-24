@@ -1,21 +1,25 @@
 str_iden="ashish_key"
 dir_string="sudo ssh -i $str_iden agaur@10.33.1.230 '[ -d /home/agaur/temp1 ]'"
+conn_string="ssh -i $str_iden agaur@10.33.1.230"
 
 function NewFun(){
 
 
 echo "Input the Remote Server Directory"
-read $DirPath
-if (  ssh -i $str_iden agaur@10.33.1.230 '[ -d /home/agaur/temp ]' ); then
-	echo "Direcoty is present"
+read DirPath
+if (  $conn_string "[ -d $DirPath ]" ); then
+    echo "Direcoty is present"
     echo "Enter The Local Directory Which Needs To be Mirrored"
-    read $InputDir
-
-    if [ -d "$InputDir" ]; then
-    	echo "Directory is Present on Local System"
+    read InputDir
+    echo "Value input is $InputDir"
+    
+    if [ -d $InputDir ]
+    then
+        echo "Directory is Present on Local System"
         dir_to_be_searched=$InputDir
-        else
-	    dir_to_be_searched=$(pwd)
+        
+    else
+        dir_to_be_searched=$(pwd)
     fi
 
     echo "Value of Directory in local system is=$dir_to_be_searched"
@@ -24,27 +28,28 @@ if (  ssh -i $str_iden agaur@10.33.1.230 '[ -d /home/agaur/temp ]' ); then
     len_pattern=${#pattern}	
 
     if [[ $len_pattern -ne 0 ]]; then
-    	(ssh  -i ashish_key agaur@10.33.1.230 "cd ~/temp;touch serverFile;ls -ltr|grep $pattern>serverFile")
+    	($conn_string "cd $DirPath;touch serverFile;ls -ltr|grep $pattern>serverFile")
     else
-        (ssh  -i ashish_key agaur@10.33.1.230 "cd ~/temp;touch serverFile;ls -ltr>serverFile")
+        ($conn_string "cd $DirPath;touch serverFile;ls -ltr>serverFile")
 
     fi
 
-    scp -i ashish_key agaur@10.33.1.230:$DirPath $dir_to_be_searched
+    scp -i ashish_key agaur@10.33.1.230:$DirPath/serverFile $dir_to_be_searched
     copy_status=$?
     
     ##Removing Server File After It Has Been Copied Successfully From Server
     if [[ $copy_status -eq 0 ]]; then
         #statements
-        ssh -i ashish_key agaur@10.33.1.230 "cd ~/temp;rm serverFile"
+        $conn_string "cd $DirPath;rm serverFile"
     fi
     #echo "Remote Files are "
     #cat serverFile	
+    cd $dir_to_be_searched
     touch Local_Files
     touch Server_Files
     cat serverFile|awk '{OFS=" "}{print $6,$7,$8,$9}'>Server_Files
     ls -ltr $dir_to_be_searched|awk '{OFS=" "}{print $6,$7,$8,$9}'>Local_Files
-    echo "###########Server Files are $server_files"
+    #echo "###########Server Files are $server_files"
 #echo $server_files>Server_Files
 
 
@@ -86,14 +91,14 @@ if (  ssh -i $str_iden agaur@10.33.1.230 '[ -d /home/agaur/temp ]' ); then
 
     ###For Copying Files
     files_copied_collection=$(cat file_to_be_copied|tr '\n' ',' | sed 's/.$//')
-    scp -v -i  ashish_key agaur@10.33.1.230:~/temp/\{$files_copied_collection\}  .
+    scp -v -i  ashish_key agaur@10.33.1.230:$DirPath/\{$files_copied_collection\}  .
     
 
     ###For Deleting Files
     value_del=$(cat file_to_be_deleted)
     val=$(echo $value_del)
     #echo "Value obtained is $val"
-    ssh -i ashish_key agaur@10.33.1.230 "cd ~/temp;rm $val"
+    $conn_string "cd $DirPath;rm $val"
 
 else
 	
